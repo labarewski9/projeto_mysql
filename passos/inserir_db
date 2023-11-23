@@ -1,0 +1,31 @@
+Para automatizar a execução do seus scripts .sh todos os dias no Ubuntu, você pode usar o utilitário cron, que é uma ferramenta de agendamento de tarefas. Aqui está como você pode configurar um trabalho cron para executar o seu script diariamente:
+
+Abra o arquivo crontab para edição digitando o seguinte comando no terminal:
+
+
+crontab -e
+
+Se for a primeira vez que você está configurando um cronjob, o sistema pode solicitar que você escolha um editor de texto. Escolha o editor de sua preferência (por exemplo, nano) e abra o arquivo crontab.
+
+Adicione uma linha ao arquivo crontab para agendar a execução diária do seu script. Por exemplo, para executar o script todos os dias às 3 da manhã, adicione a seguinte linha:
+
+ruby
+
+0 3 * * * /caminho/para/o/seu/script/compras.sh
+Substitua /caminho/para/o/seu/script/compras.sh pelo caminho completo para o seu script compras.sh. Certifique-se de fornecer o caminho absoluto para o script, pois os trabalhos cron não têm o mesmo contexto de caminho que um shell interativo.
+
+Os campos na linha cronjob significam o seguinte:
+0 - Minuto (0-59)
+3 - Hora (0-23)
+* - Dia do mês (1-31)
+* - Mês (1-12)s
+* - Dia da semana (0-7, onde tanto 0 quanto 7 representam domingo)
+Neste exemplo, o script será executado todos os dias às 3 da manhã.
+
+Salve e saia do editor. No nano, você pode fazer isso pressionando Ctrl + O para salvar, Enter para confirmar e Ctrl + X para sair.
+
+Agora, o seu script compras.sh será executado automaticamente todos os dias no horário especificado. Certifique-se de que o arquivo compras.sh tenha permissões de execução adequadas para que o cronjob possa executá-lo. Você pode conceder permissões de execução ao arquivo usando o comando chmod conforme mencionado anteriormente, se ainda não o fez:
+
+bash
+Copy code
+chmod +x /caminho/para/o/seu/script/compras.sh

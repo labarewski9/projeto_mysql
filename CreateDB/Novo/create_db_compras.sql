@@ -1,0 +1,1 @@
+create database stage_compras;

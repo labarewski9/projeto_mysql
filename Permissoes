@@ -1,0 +1,39 @@
+1 sudo nano /etc/mysql/my.cnf: Este comando abre o arquivo de configuração do MySQL (my.cnf) para edição com o editor de texto Nano. O sudo é usado para obter permissões de superusuário, permitindo que você faça alterações em arquivos de sistema.
+
+2 [mysqld]: Esta linha indica que as configurações que você está prestes a definir se aplicam ao servidor MySQL (mysqld).
+
+3 local-infile = 1: Esta configuração é adicionada ao arquivo my.cnf. Ela permite a leitura de arquivos locais pelo MySQL. Definindo local-infile = 1, você está permitindo que o MySQL carregue dados de arquivos locais.
+
+4 sudo systemctl restart mysql: Após editar o arquivo de configuração, você está reiniciando o serviço do MySQL para que as alterações na configuração tenham efeito. O comando systemctl restart mysql reinicia o serviço MySQL.
+
+5 SHOW VARIABLES LIKE 'local_infile';: Este comando SQL é usado dentro do cliente MySQL para verificar o valor da variável de sistema local_infile. Após realizar as alterações no arquivo de configuração e reiniciar o MySQL, você pode usar esse comando para confirmar se a configuração local-infile foi ativada corretamente.
+
+Em resumo, você está editando o arquivo de configuração do MySQL para permitir a leitura de arquivos locais (local-infile = 1), reiniciando o serviço MySQL para aplicar essas alterações e, em seguida, verificando se a configuração foi ativada corretamente usando o comando SQL SHOW VARIABLES LIKE 'local_infile';.
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+Se você estiver usando o MySQL no Ubuntu e deseja permitir a leitura de arquivos locais, você pode seguir estas etapas:
+
+Abra o arquivo de configuração do MySQL, que geralmente é chamado de my.cnf. O caminho padrão pode ser /etc/mysql/my.cnf ou /etc/my.cnf.
+bash
+Copy code
+sudo nano /etc/mysql/my.cnf
+Dentro do arquivo, adicione ou edite a linha local-infile no bloco [mysqld]. Se a linha não existir, adicione-a. Certifique-se de definir o valor como 1 para permitir a leitura de arquivos locais.
+ini
+Copy code
+[mysqld]
+local-infile = 1
+Salve o arquivo e saia do editor.
+
+Reinicie o serviço do MySQL para aplicar as alterações.
+
+bash
+Copy code
+sudo service mysql restart
+Lembre-se de que, ao permitir a leitura de arquivos locais, você deve garantir que apenas usuários autorizados tenham permissão para acessar e executar operações que envolvam essa funcionalidade, a fim de mitigar riscos de segurança.
+
+
+
+
+
+

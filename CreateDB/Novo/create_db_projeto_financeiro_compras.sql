@@ -1,0 +1,1 @@
+create database projeto_financeiro_compras;

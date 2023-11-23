@@ -1,0 +1,121 @@
+USE stage_compras;
+DELIMITER //
+
+CREATE PROCEDURE sp_compras_rejeitadas()
+BEGIN
+
+    -- Primeira parte da transação
+    START TRANSACTION;
+    INSERT INTO stage_compras.VALIDACAO_COMPRAS_REJEITADOS
+    SELECT
+        NOME_FORNECEDOR,
+        CNPJ_FORNECEDOR,
+        EMAIL_FORNECEDOR,
+        TELEFONE_FORNECEDOR,
+        TRIM(NUMERO_NF) AS NUMERO_NF,
+        DATA_EMISSAO,
+        VALOR_NET,
+        VALOR_TRIBUTO,
+        VALOR_TOTAL,
+        NOME_ITEM,
+        QTD_ITEM,
+        CONDICAO_PAGAMENTO,
+        CEP,
+        NUM_ENDERECO,
+        COALESCE(COMPLEMENTO, 'SEM COMPLEMENTO') AS COMPLEMENTO,
+        TIPO_ENDERECO,
+        DATA_PROCESSAMENTO,
+        CASE
+            WHEN CONCAT(DATA_PROCESSAMENTO, NUMERO_NF, CNPJ_FORNECEDOR) IN (
+                SELECT CONCAT(DATA_PROCESSAMENTO, NUM_NF, CNPJ_FORNECEDOR)
+                FROM stage_compras.VALIDACAO_COMPRAS
+            ) THEN 'Esta NF já foi inserida no sistema'
+            ELSE 'Ok'
+        END AS MOTIVO_DUPLICATAS,
+        CASE
+            WHEN 
+			NOME_FORNECEDOR IS NULL OR NOME_FORNECEDOR LIKE '' OR
+			CNPJ_FORNECEDOR IS NULL OR CNPJ_FORNECEDOR LIKE '' OR
+			EMAIL_FORNECEDOR IS NULL OR EMAIL_FORNECEDOR LIKE '' OR
+			TELEFONE_FORNECEDOR IS NULL OR TELEFONE_FORNECEDOR LIKE '' OR
+			NUMERO_NF IS NULL OR NUMERO_NF LIKE '' OR
+			DATA_EMISSAO IS NULL OR DATA_EMISSAO LIKE '' OR
+			VALOR_NET IS NULL OR VALOR_NET LIKE '' OR
+			VALOR_TRIBUTO IS NULL OR VALOR_TRIBUTO LIKE '' OR
+			VALOR_TOTAL IS NULL OR VALOR_TOTAL LIKE '' OR
+			NOME_ITEM IS NULL OR NOME_ITEM LIKE '' OR
+			QTD_ITEM IS NULL OR QTD_ITEM LIKE '' OR
+			CONDICAO_PAGAMENTO IS NULL OR CONDICAO_PAGAMENTO LIKE '' OR
+			CEP IS NULL OR CEP LIKE '' OR
+			NUM_ENDERECO IS NULL OR NUM_ENDERECO LIKE '' OR
+			TIPO_ENDERECO IS NULL OR TIPO_ENDERECO LIKE '' OR
+			DATA_PROCESSAMENTO IS NULL OR DATA_PROCESSAMENTO LIKE '' THEN 'Existe alguma(s) coluna(s) obrigatória(s) nula'
+            ELSE 'Ok'
+        END AS MOTIVO_NULLS,
+        CASE
+            WHEN TRIM(CEP) NOT IN (SELECT cep FROM projeto_financeiro_compras.CEP) THEN 'CEP não existe dentro da tabela CEP'
+            ELSE 'Ok'
+        END AS MOTIVO_CEP
+    FROM stage_compras.COMPRAS AS C
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM stage_compras.TRATAMENTO_COMPRAS_FINAL AS CF
+        WHERE TRIM(C.NUMERO_NF) = TRIM(CF.NUMERO_NF));
+    COMMIT;
+
+    -- Segunda parte da transação
+    START TRANSACTION;
+    INSERT INTO stage_compras.VALIDACAO_COMPRAS_REJEITADOS
+    SELECT
+        NOME_FORNECEDOR,
+        CNPJ_FORNECEDOR,
+        EMAIL_FORNECEDOR,
+        TELEFONE_FORNECEDOR,
+        NUMERO_NF,
+        DATA_EMISSAO,
+        VALOR_NET,
+        VALOR_TRIBUTO,
+        VALOR_TOTAL,
+        NOME_ITEM,
+        QTD_ITEM,
+        ID_CONDICAO_PAGAMENTO,
+        CEP,
+        NUM_ENDERECO,
+        COMPLEMENTO,
+        TIPO_ENDERECO,
+        DATA_PROCESSAMENTO,
+        'Esta NF é uma duplicata' AS MOTIVO_DUPLICATAS,
+        'Ok' AS MOTIVO_NULLS,
+        'Ok' AS MOTIVO_CEP
+    FROM (
+        SELECT
+            NOME_FORNECEDOR,
+            CNPJ_FORNECEDOR,
+            EMAIL_FORNECEDOR,
+            TELEFONE_FORNECEDOR,
+            NUMERO_NF,
+            DATA_EMISSAO,
+            VALOR_NET,
+            VALOR_TRIBUTO,
+            VALOR_TOTAL,
+            NOME_ITEM,
+            QTD_ITEM,
+            ID_CONDICAO_PAGAMENTO,
+            CEP,
+            NUM_ENDERECO,
+            COMPLEMENTO,
+            TIPO_ENDERECO,
+            DATA_PROCESSAMENTO,
+            ROW_NUMBER() OVER (PARTITION BY NUMERO_NF, CNPJ_FORNECEDOR ORDER BY NUMERO_NF) AS DuplicateCount
+        FROM stage_compras.TRATAMENTO_COMPRAS_FINAL
+    ) AS t
+    WHERE DuplicateCount > 1;
+    COMMIT;
+END//
+
+DELIMITER ;
+
+
+CALL sp_compras_rejeitadas();
+select * from stage_compras.VALIDACAO_COMPRAS_REJEITADOS;
+truncate table stage_compras.VALIDACAO_COMPRAS_REJEITADOS;

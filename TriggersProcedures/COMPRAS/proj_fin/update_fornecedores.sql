@@ -1,0 +1,51 @@
+USE projeto_financeiro_compras;
+DELIMITER //
+
+CREATE PROCEDURE sp_update_fornecedores()
+BEGIN
+    DECLARE NOME_FORNECEDOR VARCHAR(255);
+    DECLARE EMAIL_FORNECEDOR VARCHAR(255);
+    DECLARE TELEFONE_FORNECEDOR VARCHAR(20);
+    DECLARE CNPJ_FORNECEDOR VARCHAR(20);
+    
+    -- Selecionar e armazenar os valores da tabela ATUAL nas variáveis
+    SELECT 
+        ATUAL.NOME_FORNECEDOR, 
+        ATUAL.EMAIL_FORNECEDOR, 
+        ATUAL.TELEFONE_FORNECEDOR,
+        ATUAL.CNPJ_FORNECEDOR
+    INTO 
+        NOME_FORNECEDOR, 
+        EMAIL_FORNECEDOR, 
+        TELEFONE_FORNECEDOR,
+        CNPJ_FORNECEDOR
+    FROM 
+        stage_compras.TRATAMENTO_COMPRAS_FINAL ATUAL
+    WHERE 
+        EXISTS (
+            SELECT 1
+            FROM projeto_financeiro_compras.FORNECEDORES F
+            WHERE F.CNPJ_FORNECEDOR = ATUAL.CNPJ_FORNECEDOR
+            AND (
+                F.NOME_FORNECEDOR != ATUAL.NOME_FORNECEDOR
+                OR F.EMAIL_FORNECEDOR != ATUAL.EMAIL_FORNECEDOR
+                OR F.TELEFONE_FORNECEDOR != ATUAL.TELEFONE_FORNECEDOR
+            )
+        );
+
+    -- Atualizar a tabela FORNECEDORES usando os valores armazenados nas variáveis
+    UPDATE projeto_financeiro_compras.FORNECEDORES
+    SET
+        NOME_FORNECEDOR = NOME_FORNECEDOR,
+        EMAIL_FORNECEDOR = EMAIL_FORNECEDOR,
+        TELEFONE_FORNECEDOR = TELEFONE_FORNECEDOR
+    WHERE 
+        CNPJ_FORNECEDOR = CNPJ_FORNECEDOR;
+END //
+
+DELIMITER ;
+
+
+
+
+
